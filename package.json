@@ -1,0 +1,12 @@
+{
+  "name": "ai-detector",
+  "version": "1.0.0",
+  "description": "AI text detector using Hugging Face Inference API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
