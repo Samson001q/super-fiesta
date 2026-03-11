@@ -398,20 +398,26 @@ app.post("/detect", async (req, res) => {
   if (!text) return res.status(400).json({ error: "No text provided" });
 
   try {
-    const response = await fetch(MODEL_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${HF_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ inputs: text }),
-    });
-
-    const result = await response.json();
+    // Retry up to 3 times with wait_for_model enabled
+    let result;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await fetch(MODEL_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${HF_TOKEN}`,
+          "Content-Type": "application/json",
+          "x-wait-for-model": "true",
+        },
+        body: JSON.stringify({ inputs: text }),
+      });
+      result = await response.json();
+      if (!result.error) break;
+      // Wait 10s before retrying
+      if (attempt < 2) await new Promise(r => setTimeout(r, 10000));
+    }
 
     if (result.error) {
-      // Model may be loading (cold start on HF free tier)
-      return res.status(503).json({ error: "Model is loading, please try again in 20 seconds." });
+      return res.status(503).json({ error: "HuggingFace model is unavailable right now. Please try again in a minute." });
     }
 
     // Result is an array of [{label, score}]
