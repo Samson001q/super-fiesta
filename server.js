@@ -6,7 +6,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const DETECT_URL = "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta";
-const HUMANIZE_URL = "https://router.huggingface.co/hf-inference/models/tuner007/pegasus_paraphrase";
+const HUMANIZE_URL = "https://api-inference.huggingface.co/models/tuner007/pegasus_paraphrase";
 
 app.get("/debug", async (req, res) => {
   try {
