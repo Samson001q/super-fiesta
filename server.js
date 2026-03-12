@@ -6,8 +6,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const DETECT_URL = "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta";
-const HUMANIZE_URL = "https://api-inference.huggingface.co/models/tuner007/pegasus_paraphrase";
-
+const HUMANIZE_URL = "https://router.huggingface.co/hf-inference/models/Vamsi/T5_Paraphrase_Paws";
 app.get("/debug", async (req, res) => {
   try {
     const response = await fetch(DETECT_URL, {
@@ -69,16 +68,13 @@ app.post("/humanize", async (req, res) => {
           "x-wait-for-model": "true",
         },
         body: JSON.stringify({
-          inputs: text,
-          parameters: {
-            num_beams: 10,
-            num_beam_groups: 5,
-            num_return_sequences: 1,
-            diversity_penalty: 3.0,
-            max_length: 128,
-            early_stopping: true,
-          }
-        }),
+  inputs: "paraphrase: " + text + " </s>",
+  parameters: {
+    max_length: 512,
+    num_return_sequences: 1,
+    temperature: 1.5,
+  }
+}),
       });
       result = await response.json();
       if (!result.error) break;
