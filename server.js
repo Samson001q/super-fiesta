@@ -7,6 +7,7 @@ app.use(express.static(path.join(__dirname, "public")));
 const HF_TOKEN = process.env.HF_TOKEN;
 const DETECT_URL = "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta";
 const HUMANIZE_URL = "https://router.huggingface.co/hf-inference/models/Vamsi/T5_Paraphrase_Paws";
+
 app.get("/debug", async (req, res) => {
   try {
     const response = await fetch(DETECT_URL, {
@@ -68,13 +69,13 @@ app.post("/humanize", async (req, res) => {
           "x-wait-for-model": "true",
         },
         body: JSON.stringify({
-  inputs: "paraphrase: " + text + " </s>",
-  parameters: {
-    max_length: 512,
-    num_return_sequences: 1,
-    temperature: 1.5,
-  }
-}),
+          inputs: "paraphrase: " + text + " </s>",
+          parameters: {
+            max_length: 512,
+            num_return_sequences: 1,
+            temperature: 1.5,
+          }
+        }),
       });
       result = await response.json();
       if (!result.error) break;
@@ -82,7 +83,7 @@ app.post("/humanize", async (req, res) => {
     }
     if (result.error) return res.status(503).json({ error: result.error });
     const humanized = result[0] && result[0].generated_text ? result[0].generated_text : null;
-    if (!humanized) return res.status(500).json({ error: "No output returned" });
+    if (!humanized) return res.status(500).json({ error: "No output returned. Raw: " + JSON.stringify(result).slice(0, 200) });
     res.json({ humanized });
   } catch (err) {
     res.status(500).json({ error: err.message });
