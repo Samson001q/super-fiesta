@@ -6,7 +6,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const DETECT_URL = "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta";
-const HUMANIZE_URL = "https://router.huggingface.co/hf-inference/models/Vamsi/T5_Paraphrase_Paws";
+const HUMANIZE_URL = "https://router.huggingface.co/v1/chat/completions";
+const HUMANIZE_MODEL = "HuggingFaceH4/zephyr-7b-beta";
 
 app.get("/debug", async (req, res) => {
   try {
@@ -59,31 +60,30 @@ app.post("/humanize", async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "No text provided" });
   try {
-    let result;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const response = await fetch(HUMANIZE_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + HF_TOKEN,
-          "Content-Type": "application/json",
-          "x-wait-for-model": "true",
-        },
-        body: JSON.stringify({
-          inputs: "paraphrase: " + text + " </s>",
-          parameters: {
-            max_length: 512,
-            num_return_sequences: 1,
-            temperature: 1.5,
+    const response = await fetch(HUMANIZE_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + HF_TOKEN,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: HUMANIZE_MODEL,
+        max_tokens: 1024,
+        messages: [
+          {
+            role: "system",
+            content: "You are a human writer. Rewrite the text given to you so it sounds natural and human-written. Use contractions, vary sentence lengths dramatically, add a casual personal observation, avoid formal transitions like 'furthermore' or 'moreover', use active voice, and keep it conversational. Return ONLY the rewritten text with no explanations."
+          },
+          {
+            role: "user",
+            content: text
           }
-        }),
-      });
-      result = await response.json();
-      if (!result.error) break;
-      if (attempt < 2) await new Promise(r => setTimeout(r, 10000));
-    }
-    if (result.error) return res.status(503).json({ error: result.error });
-    const humanized = result[0] && result[0].generated_text ? result[0].generated_text : null;
-    if (!humanized) return res.status(500).json({ error: "No output returned. Raw: " + JSON.stringify(result).slice(0, 200) });
+        ]
+      }),
+    });
+    const result = await response.json();
+    const humanized = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+    if (!humanized) return res.status(500).json({ error: "No output. Raw: " + JSON.stringify(result).slice(0, 300) });
     res.json({ humanized });
   } catch (err) {
     res.status(500).json({ error: err.message });
