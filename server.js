@@ -5,7 +5,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 const HF_TOKEN = process.env.HF_TOKEN;
-const MODEL_URL = "https://router.huggingface.co/hf-inference/models/desklib/ai-text-detector-v1.01";
+const MODEL_URL = "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta";
 
 app.get("/debug", async (req, res) => {
   try {
@@ -46,8 +46,8 @@ app.post("/detect", async (req, res) => {
     }
     if (result.error) return res.status(503).json({ error: result.error });
     const labels = result[0];
-    const ai    = (labels.find(l => l.label === "AI")    || {}).score || 0;
-    const human = (labels.find(l => l.label === "Human") || {}).score || 0;
+    const ai    = (labels.find(l => l.label === "ChatGPT") || {}).score || 0;
+    const human = (labels.find(l => l.label === "Human")   || {}).score || 0;
     res.json({ ai, human });
   } catch (err) {
     res.status(500).json({ error: err.message });
