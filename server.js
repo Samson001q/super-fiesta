@@ -62,11 +62,20 @@ app.post("/humanize", async (req, res) => {
     const response = await fetch(HUMANIZE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [text] }),
+      body: JSON.stringify({ data: [text, "Standard"] }),
     });
-    const result = await response.json();
-    const humanized = (result.data && result.data[0]) ? result.data[0] : null;
-    if (!humanized) return res.status(500).json({ error: "No output from humanizer" });
+    const raw = await response.text();
+    console.log("Humanizer raw response:", raw);
+    const result = JSON.parse(raw);
+    const humanized =
+      (result.data && typeof result.data[0] === "string" && result.data[0]) ||
+      (result.data && result.data[0] && result.data[0].value) ||
+      (result.output) ||
+      null;
+    if (!humanized) {
+      console.log("Full result:", JSON.stringify(result));
+      return res.status(500).json({ error: "Unexpected response: " + raw.slice(0, 200) });
+    }
     res.json({ humanized });
   } catch (err) {
     res.status(500).json({ error: err.message });
